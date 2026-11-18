@@ -17,12 +17,12 @@ public class MockPaymentGatewayB implements PaymentGateway {
     public String getGatewayName() {
         return "MOCK_GATEWAY_B";
     }
-
-    @Override
-    public boolean supports(String paymentMethod) {
-        return paymentMethod != null
-                && paymentMethod.equalsIgnoreCase("NETBANKING");
-    }
+@Override
+public boolean supports(String paymentMethod) {
+    return paymentMethod != null &&
+            (paymentMethod.equalsIgnoreCase("UPI")
+            || paymentMethod.equalsIgnoreCase("NETBANKING"));
+}
 
     @Override
     public GatewayPaymentResult processPayment(
@@ -41,4 +41,13 @@ public class MockPaymentGatewayB implements PaymentGateway {
                 "Payment successfully processed by Mock Gateway B"
         );
     }
+    @Override
+public int getPriority() {
+    return 2;
+}
+
+@Override
+public boolean isAvailable() {
+    return true;
+}
 }

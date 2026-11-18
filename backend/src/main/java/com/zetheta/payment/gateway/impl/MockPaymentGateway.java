@@ -40,4 +40,13 @@ public class MockPaymentGateway implements PaymentGateway {
                 "Mock payment processed successfully"
         );
     }
+    @Override
+public int getPriority() {
+    return 1;
+}
+
+@Override
+public boolean isAvailable() {
+    return true;
+}
 }
