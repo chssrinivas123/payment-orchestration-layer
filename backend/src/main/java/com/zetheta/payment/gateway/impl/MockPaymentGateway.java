@@ -2,6 +2,7 @@
 package com.zetheta.payment.gateway.impl;
 
 import org.springframework.stereotype.Component;
+import com.zetheta.payment.config.GatewayProperties;
 
 import com.zetheta.payment.entity.PaymentTransaction;
 import com.zetheta.payment.enums.PaymentStatus;
@@ -12,7 +13,11 @@ import java.util.UUID;
 
 @Component
 public class MockPaymentGateway implements PaymentGateway {
-
+    private final GatewayProperties properties;
+    public MockPaymentGateway(GatewayProperties properties) {
+    this.properties = properties;
+}
+  
     @Override
     public String getGatewayName() {
         return "MOCK_GATEWAY";
@@ -47,6 +52,7 @@ public int getPriority() {
 
 @Override
 public boolean isAvailable() {
-    return true;
+    return properties.getMockA().isEnabled();
 }
 }
+
