@@ -2,6 +2,7 @@
 package com.zetheta.payment.service;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -41,7 +42,8 @@ public class PaymentService {
         }
 
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Amount must be greater than zero");
+            throw new IllegalArgumentException(
+                    "Amount must be greater than zero");
         }
 
         if (currency == null || !currency.matches("[A-Za-z]{3}")) {
@@ -49,11 +51,13 @@ public class PaymentService {
         }
 
         if (paymentMethod == null || paymentMethod.isBlank()) {
-            throw new IllegalArgumentException("Payment method is required");
+            throw new IllegalArgumentException(
+                    "Payment method is required");
         }
 
         if (idempotencyKey == null || idempotencyKey.isBlank()) {
-            throw new IllegalArgumentException("Idempotency key is required");
+            throw new IllegalArgumentException(
+                    "Idempotency key is required");
         }
 
         String normalizedCurrency = currency.toUpperCase();
@@ -69,7 +73,8 @@ public class PaymentService {
                     existing.getOrderId().equals(orderId)
                     && existing.getAmount().compareTo(amount) == 0
                     && existing.getCurrency().equals(normalizedCurrency)
-                    && existing.getPaymentMethod().equalsIgnoreCase(paymentMethod);
+                    && existing.getPaymentMethod()
+                            .equalsIgnoreCase(paymentMethod);
 
             if (!sameRequest) {
                 throw new IllegalArgumentException(
@@ -79,7 +84,7 @@ public class PaymentService {
             return existing;
         }
 
-        // 3. Create a new transaction
+        // 3. Create payment transaction
         PaymentTransaction transaction = new PaymentTransaction();
 
         transaction.setTransactionId("TXN-" + UUID.randomUUID());
@@ -93,19 +98,48 @@ public class PaymentService {
         // 4. Save initial transaction
         paymentRepository.save(transaction);
 
-        // 5. Select a suitable gateway
-        PaymentGateway gateway =
-                gatewayRegistry.getGateway(paymentMethod);
+        // 5. Get eligible gateways in priority order
+        List<PaymentGateway> availableGateways =
+                gatewayRegistry.getAvailableGateways(paymentMethod);
 
-        transaction.setGatewayName(gateway.getGatewayName());
-        transaction.setStatus(PaymentStatus.PROCESSING);
+        if (availableGateways.isEmpty()) {
+            transaction.setStatus(PaymentStatus.FAILED);
+            return paymentRepository.save(transaction);
+        }
 
-        // 6. Process payment through selected gateway
-        GatewayPaymentResult result =
-                gateway.processPayment(transaction);
+        // 6. Attempt payment with gateway failover
+        for (PaymentGateway gateway : availableGateways) {
 
-        // 7. Update transaction with gateway result
-        transaction.setStatus(result.status());
+            transaction.setGatewayName(gateway.getGatewayName());
+            transaction.setStatus(PaymentStatus.PROCESSING);
+
+            try {
+                System.out.println(
+                        "Trying payment gateway: "
+                                + gateway.getGatewayName());
+
+                GatewayPaymentResult result =
+                        gateway.processPayment(transaction);
+
+                transaction.setStatus(result.status());
+
+                System.out.println(
+                        "Payment result: " + result.status());
+
+                return paymentRepository.save(transaction);
+
+            } catch (RuntimeException exception) {
+
+                System.err.println(
+                        "Gateway failed: "
+                                + gateway.getGatewayName()
+                                + " - "
+                                + exception.getMessage());
+            }
+        }
+
+        // 7. All gateways failed
+        transaction.setStatus(PaymentStatus.FAILED);
 
         return paymentRepository.save(transaction);
     }

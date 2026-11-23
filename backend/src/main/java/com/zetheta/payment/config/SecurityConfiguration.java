@@ -1,3 +1,4 @@
+
 package com.zetheta.payment.config;
 
 import org.springframework.context.annotation.Bean;
@@ -16,7 +17,11 @@ public class SecurityConfiguration {
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/payments"))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.POST, "/api/payments").permitAll()
-                        .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers(
+                                "/actuator/health",
+                                "/actuator/circuitbreakers",
+                                "/actuator/circuitbreakerevents"
+                        ).permitAll()
                         .anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults());
 

@@ -1,4 +1,3 @@
-
 package com.zetheta.payment.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -28,6 +27,7 @@ public class GatewayProperties {
     public static class MockGateway {
 
         private boolean enabled = true;
+        private boolean simulateFailure = false;
 
         public boolean isEnabled() {
             return enabled;
@@ -35,6 +35,14 @@ public class GatewayProperties {
 
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
+        }
+
+        public boolean isSimulateFailure() {
+            return simulateFailure;
+        }
+
+        public void setSimulateFailure(boolean simulateFailure) {
+            this.simulateFailure = simulateFailure;
         }
     }
 }

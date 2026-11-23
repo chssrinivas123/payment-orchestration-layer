@@ -1,5 +1,6 @@
 
 package com.zetheta.payment.gateway.impl;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 import java.util.UUID;
 
@@ -41,7 +42,7 @@ public class MockPaymentGatewayB implements PaymentGateway {
     public boolean isAvailable() {
         return properties.getMockB().isEnabled();
     }
-
+    @CircuitBreaker(name = "mockGatewayB")
     @Override
     public GatewayPaymentResult processPayment(
             PaymentTransaction transaction) {

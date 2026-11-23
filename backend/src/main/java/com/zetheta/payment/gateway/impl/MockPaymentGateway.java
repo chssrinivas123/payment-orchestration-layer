@@ -1,5 +1,6 @@
 
 package com.zetheta.payment.gateway.impl;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 import org.springframework.stereotype.Component;
 import com.zetheta.payment.config.GatewayProperties;
@@ -30,21 +31,25 @@ public class MockPaymentGateway implements PaymentGateway {
                 || paymentMethod.equalsIgnoreCase("CARD"));
     }
 
+    @CircuitBreaker(name = "mockGatewayA")
     @Override
-    public GatewayPaymentResult processPayment(
-            PaymentTransaction transaction) {
+public GatewayPaymentResult processPayment(PaymentTransaction transaction) {
 
-        System.out.println("Processing payment through Mock Gateway");
+    System.out.println("Processing payment through Mock Gateway A");
 
-        String gatewayTransactionId =
-                "MOCK-" + UUID.randomUUID();
-
-        return new GatewayPaymentResult(
-                PaymentStatus.SUCCESS,
-                gatewayTransactionId,
-                "Mock payment processed successfully"
-        );
+    if (properties.getMockA().isSimulateFailure()) {
+        System.out.println("Simulating Gateway A failure!");
+        throw new RuntimeException("Simulated Gateway A failure");
     }
+
+    String gatewayTransactionId = "MOCK-" + UUID.randomUUID();
+
+    return new GatewayPaymentResult(
+            PaymentStatus.SUCCESS,
+            gatewayTransactionId,
+            "Mock payment processed successfully"
+    );
+}
     @Override
 public int getPriority() {
     return 1;
